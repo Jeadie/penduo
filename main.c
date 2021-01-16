@@ -36,15 +36,16 @@ int main(int argc, char *argv[])
   // Consider vector (p_1, p_2, theta_1, theta_2) at time t, 
   // vector is stored at data[4*t]
   // For individual value with index j < 4 data[4*t + j]
-  float* data= (float *) malloc(4* ITERATIONS * sizeof(float)); 
-  
+  // float* data= (float *) malloc(4* ITERATIONS * sizeof(float)); 
+  float* next = (float *) malloc(4 * sizeof(float)); 
+  float* current = (float *) malloc(4 * sizeof(float)); 
   // Initial Conditions: p_1, p_2, theta_1, theta_2
-  data[0] = 0.0;
-  data[1] = 0.0;
-  data[2] = 0.0;
-  data[3] = 0.0;
+  current[0] = 0.0;
+  current[1] = 0.0;
+  current[2] = 0.0;
+  current[3] = 0.0;
 
-  char* file_path; 
+  char* file_path = "results.csv"; 
 
   // parse argv
   for (int i =0; i < argc; i++) {
@@ -56,10 +57,10 @@ int main(int argc, char *argv[])
        exit(0);
      }
      if (strcmp(argv[i],"--initial-conditions")==0) {
-       data[0] = atof(argv[i+1]);
-       data[1] = atof(argv[i+2]);
-       data[2] = atof(argv[i+3]);
-       data[3] = atof(argv[i+4]);
+       current[0] = atof(argv[i+1]);
+       current[1] = atof(argv[i+2]);
+       current[2] = atof(argv[i+3]);
+       current[3] = atof(argv[i+4]);
        i+=5; 
      };
 
@@ -74,17 +75,27 @@ int main(int argc, char *argv[])
   differentials[2] = d_theta_1; 
   differentials[3] = d_theta_2;
 
-  FILE* results = fopen("results.csv", "w");
+  FILE* results = fopen(file_path, "w");
+  fprintf(results, "%.8f,%.8f,%.8f,%.8f\n", current[0], current[1], current[2], current[3]);
 
-  // Apply Runga Kutta   
-  for (int i =1; i < ITERATIONS; i++) {
-      float* current = &data[4*(i-1)];
-      for (int j = 0; j < 4; j++) {
-          data[4*i+ j] = runga_kutta(differentials[j], current, STEP_SIZE, j);
-      };
-      fprintf(results, "%.8f,%.8f,%.8f,%.8f\n", data[4*i], data[4*i + 1], data[4*i + 2], data[4*i + 3]);
-      fflush(results);
-  };
+
+  // Apply Runga Kutta
+  int i = 1;
+  do {
+    for (int j = 0; j < 4; j++) {
+        next[j] = runga_kutta(differentials[j], current, STEP_SIZE, j);
+    };
+    fprintf(results, "%.8f,%.8f,%.8f,%.8f\n", next[0], next[1], next[2], next[3]);
+    fflush(results);
+
+    // Hard copy next -> current by swapping pointers.
+    float* temp = current; 
+    current = next;
+    next = temp;
+
+    i++;
+  }
+  while(ITERATIONS == -1 || i < ITERATIONS);   
 }
 
 /** Applied a single iteration of the Runga Kutta schema to a differential equation.
