@@ -1,2 +1,13 @@
-#gcc *.c -o main -I /usr/include/cairo  -I $(pkg-config --cflags --libs cairo)  -lm -L /usr/lib #-lcairo main.c particle.c
-gcc *.c -0 main 
+FLAGS = -Wall -pedantic -g
+
+default: main
+
+main.o: main.c $(HEADERS) 
+		gcc $(FLAGS) -c main.c -o main.o
+
+main: main.o
+		gcc main.o -o main -lm
+
+clean:
+		-rm -f main.o
+		-rm -f main
